@@ -1,2 +1,4 @@
 */workspace.json
 */.structurizr
+.venv
+.structurizr

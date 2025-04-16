@@ -2,3 +2,8 @@
 */.structurizr
 .venv
 .structurizr
+.env
+
+db/folders/data/*
+db/users/data/*
+.github

@@ -1,0 +1,72 @@
+[
+    {
+        "id": 1,
+        "username": "john_doe",
+        "email": "john.doe@example.com",
+        "hashed_password": "5f4dcc3b5aa765d61d8327deb882cf99",
+        "age": 28
+    },
+    {
+        "id": 2,
+        "username": "alice_smith",
+        "email": "alice.smith@example.com",
+        "hashed_password": "6cb75f78a8b9122f226b4cc0d4c3d4e5",
+        "age": 34
+    },
+    {
+        "id": 3,
+        "username": "bob_jackson",
+        "email": "bob.jackson@example.com",
+        "hashed_password": "d8578edf8458ce06fbc5bb76a58c5ca4",
+        "age": 22
+    },
+    {
+        "id": 4,
+        "username": "emma_wilson",
+        "email": "emma.wilson@example.com",
+        "hashed_password": "2e7dce8c8b4d5c5e5a5c5d5e5f5e5d5c",
+        "age": 45
+    },
+    {
+        "id": 5,
+        "username": "mike_brown",
+        "email": "mike.brown@example.com",
+        "hashed_password": "9ab0d88431732957a618d4a469a0d4c3",
+        "age": 29
+    },
+    {
+        "id": 6,
+        "username": "lisa_taylor",
+        "email": "lisa.taylor@example.com",
+        "hashed_password": "cbfdac6008f9cab4083784cbd1874f76",
+        "age": 31
+    },
+    {
+        "id": 7,
+        "username": "david_clark",
+        "email": "david.clark@example.com",
+        "hashed_password": "e10adc3949ba59abbe56e057f20f883e",
+        "age": 27
+    },
+    {
+        "id": 8,
+        "username": "sarah_white",
+        "email": "sarah.white@example.com",
+        "hashed_password": "d0763edaa9d9bd2a9516280e9044d885",
+        "age": 38
+    },
+    {
+        "id": 9,
+        "username": "kevin_green",
+        "email": "kevin.green@example.com",
+        "hashed_password": "5f4dcc3b5aa765d61d8327deb882cf99",
+        "age": 24
+    },
+    {
+        "id": 10,
+        "username": "olivia_king",
+        "email": "olivia.king@example.com",
+        "hashed_password": "96e79218965eb72c92a549dd5a330112",
+        "age": 41
+    }
+]

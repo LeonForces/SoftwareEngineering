@@ -1,0 +1,27 @@
+version: '3.3'
+
+services:
+
+  structurizr:
+    image: structurizr/lite
+    ports:
+      - 9999:8080
+    volumes:
+        - ../..:/usr/local/structurizr
+    networks:
+      - my_network
+  app:
+    build: 
+      context: ../..
+      dockerfile: .devcontainer/structurizr/Dockerfile
+    networks:
+      - my_network
+    volumes:
+      - ../..:/workspace
+    ports:
+      - "8000:8000"
+      - "8001:8001"
+      - "8080:8080"
+
+networks:
+  my_network:

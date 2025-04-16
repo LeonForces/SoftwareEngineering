@@ -1,0 +1,553 @@
+{
+  "configuration" : { },
+  "description" : "Description",
+  "documentation" : { },
+  "id" : 1,
+  "lastModifiedAgent" : "structurizr-ui",
+  "lastModifiedDate" : "2025-04-11T18:45:52Z",
+  "model" : {
+    "people" : [ {
+      "description" : "Человек, занимающийся созданием, тестированием и поддержкой программного обеспечения.",
+      "id" : "1",
+      "location" : "Unspecified",
+      "name" : "Разработчик",
+      "properties" : {
+        "structurizr.dsl.identifier" : "developer"
+      },
+      "relationships" : [ {
+        "description" : "Разрабатывает и поддерживает: Новые функции, Исправление ошибок, Оптимизацию производительности",
+        "destinationId" : "4",
+        "id" : "16",
+        "sourceId" : "1",
+        "tags" : "Relationship"
+      } ],
+      "tags" : "Element,Person"
+    }, {
+      "description" : "Конечный пользователь продукта, который взаимодействует с системой для решения своих задач",
+      "id" : "2",
+      "location" : "Unspecified",
+      "name" : "Пользователь",
+      "properties" : {
+        "structurizr.dsl.identifier" : "customer"
+      },
+      "relationships" : [ {
+        "description" : "Использует для отправки/получения писем, Управления контактами, Настройки фильтров, Работы с вложениями",
+        "destinationId" : "4",
+        "id" : "15",
+        "sourceId" : "2",
+        "tags" : "Relationship"
+      }, {
+        "description" : "видит письма, почтовые папки пользователя используя",
+        "destinationId" : "6",
+        "id" : "22",
+        "sourceId" : "2",
+        "tags" : "Relationship"
+      }, {
+        "description" : "видит письма, почтовые папки пользователя используя",
+        "destinationId" : "7",
+        "id" : "23",
+        "sourceId" : "2",
+        "tags" : "Relationship"
+      } ],
+      "tags" : "Element,Person,Customer"
+    }, {
+      "description" : "Управляет инфраструктурой системы: настраивает права доступа, обеспечивает безопасность, обновляет компоненты и устраняет технические сбои.",
+      "id" : "3",
+      "location" : "Unspecified",
+      "name" : "Администратор",
+      "properties" : {
+        "structurizr.dsl.identifier" : "admin"
+      },
+      "relationships" : [ {
+        "description" : "Администрирует: Инфраструктуру, Права доступа, Мониторинг, Резервное копирование",
+        "destinationId" : "4",
+        "id" : "17",
+        "sourceId" : "3",
+        "tags" : "Relationship"
+      } ],
+      "tags" : "Element,Person"
+    } ],
+    "softwareSystems" : [ {
+      "containers" : [ {
+        "description" : "Маршрутизация запросов к сервисам. Аутентификация (проверка JWT). Логирование и мониторинг.",
+        "documentation" : { },
+        "id" : "5",
+        "name" : "API Gateway",
+        "properties" : {
+          "structurizr.dsl.identifier" : "apigateway"
+        },
+        "relationships" : [ {
+          "description" : "проверяет токен через",
+          "destinationId" : "13",
+          "id" : "26",
+          "sourceId" : "5",
+          "tags" : "Relationship",
+          "technology" : "JSON/HTTPS"
+        }, {
+          "description" : "создает письмо, получает письмо по ID, загружает вложения через",
+          "destinationId" : "8",
+          "id" : "27",
+          "sourceId" : "5",
+          "tags" : "Relationship",
+          "technology" : "JSON/HTTPS"
+        }, {
+          "description" : "создает папки для писем, получает списки папок пользователя через",
+          "destinationId" : "9",
+          "id" : "28",
+          "sourceId" : "5",
+          "tags" : "Relationship",
+          "technology" : "JSON/HTTPS"
+        }, {
+          "description" : "регистрирует новых пользователей, поиск пользователей по логину или имени через",
+          "destinationId" : "10",
+          "id" : "29",
+          "sourceId" : "5",
+          "tags" : "Relationship",
+          "technology" : "JSON/HTTPS"
+        } ],
+        "tags" : "Element,Container,API Gateway",
+        "technology" : "Python (FastAPI)"
+      }, {
+        "description" : "Нативное мобильное приложение с push-уведомлениями и офлайн-режимом",
+        "documentation" : { },
+        "id" : "6",
+        "name" : "Mobile Application",
+        "properties" : {
+          "structurizr.dsl.identifier" : "mobileapplication"
+        },
+        "relationships" : [ {
+          "description" : "выполняет вызов api через",
+          "destinationId" : "5",
+          "id" : "24",
+          "sourceId" : "6",
+          "tags" : "Relationship",
+          "technology" : "JSON/HTTPS"
+        } ],
+        "tags" : "Element,Container,Mobile Client",
+        "technology" : "Swift, Kotlin"
+      }, {
+        "description" : "Отвечает за рендеринг писем, форм и настроек.",
+        "documentation" : { },
+        "id" : "7",
+        "name" : "Web Application",
+        "properties" : {
+          "structurizr.dsl.identifier" : "webapplication"
+        },
+        "relationships" : [ {
+          "description" : "выполняет вызов api через",
+          "destinationId" : "5",
+          "id" : "25",
+          "sourceId" : "7",
+          "tags" : "Relationship",
+          "technology" : "JSON/HTTPS"
+        } ],
+        "tags" : "Element,Container,Web Application",
+        "technology" : "React.js"
+      }, {
+        "description" : "Создание нового письма в папке. Получение всех писем в папке. Получение письма по коду (ID).",
+        "documentation" : { },
+        "id" : "8",
+        "name" : "Email Service",
+        "properties" : {
+          "structurizr.dsl.identifier" : "emailservice"
+        },
+        "tags" : "Element,Container",
+        "technology" : "Python (FastAPI)"
+      }, {
+        "description" : "Создание новой почтовой папки. Получение перечня всех папок пользователя.",
+        "documentation" : { },
+        "id" : "9",
+        "name" : "Folder Service",
+        "properties" : {
+          "structurizr.dsl.identifier" : "folderservice"
+        },
+        "tags" : "Element,Container",
+        "technology" : "Python (FastAPI)"
+      }, {
+        "description" : "Создание нового пользователя. Поиск пользователя по логину. Поиск пользователя по маске имени и фамилии.",
+        "documentation" : { },
+        "id" : "10",
+        "name" : "User Service",
+        "properties" : {
+          "structurizr.dsl.identifier" : "userservice"
+        },
+        "tags" : "Element,Container",
+        "technology" : "Python (FastAPI)"
+      } ],
+      "description" : "Веб-сервис электронной почты",
+      "documentation" : { },
+      "id" : "4",
+      "location" : "Unspecified",
+      "name" : "E-Mail System",
+      "properties" : {
+        "structurizr.dsl.identifier" : "emailsystem"
+      },
+      "relationships" : [ {
+        "description" : "Асинхронная отправка исходящих писем, TLS шифрование, Retry политики",
+        "destinationId" : "11",
+        "id" : "18",
+        "sourceId" : "4",
+        "tags" : "Relationship"
+      }, {
+        "description" : "Синхронизация входящих писем, Периодический опрос, IDLE расширение",
+        "destinationId" : "12",
+        "id" : "19",
+        "sourceId" : "4",
+        "tags" : "Relationship"
+      }, {
+        "description" : "Federated Authentication, OAuth 2.0 flows, JWT валидация",
+        "destinationId" : "13",
+        "id" : "20",
+        "sourceId" : "4",
+        "tags" : "Relationship"
+      }, {
+        "description" : "Хранение вложений, Частичная загрузка, CDN интеграция",
+        "destinationId" : "14",
+        "id" : "21",
+        "sourceId" : "4",
+        "tags" : "Relationship"
+      } ],
+      "tags" : "Element,Software System"
+    }, {
+      "description" : "Отправка исходящих писем",
+      "documentation" : { },
+      "id" : "11",
+      "location" : "Unspecified",
+      "name" : "SMPT-сервер",
+      "properties" : {
+        "structurizr.dsl.identifier" : "smptserver"
+      },
+      "tags" : "Element,Software System,External system"
+    }, {
+      "description" : "Получение писем с внешних почтовых ящиков",
+      "documentation" : { },
+      "id" : "12",
+      "location" : "Unspecified",
+      "name" : "IMAP-сервер",
+      "properties" : {
+        "structurizr.dsl.identifier" : "imapserver"
+      },
+      "tags" : "Element,Software System,External system"
+    }, {
+      "description" : "Сторонний сервис аутентификации",
+      "documentation" : { },
+      "id" : "13",
+      "location" : "Unspecified",
+      "name" : "OAuth сервис",
+      "properties" : {
+        "structurizr.dsl.identifier" : "oauthservice"
+      },
+      "tags" : "Element,Software System,External system"
+    }, {
+      "description" : "Хранилище для вложений",
+      "documentation" : { },
+      "id" : "14",
+      "location" : "Unspecified",
+      "name" : "Облачное хранилище",
+      "properties" : {
+        "structurizr.dsl.identifier" : "cloudstorage"
+      },
+      "tags" : "Element,Software System,External system"
+    } ]
+  },
+  "name" : "Name",
+  "properties" : {
+    "structurizr.dsl" : "d29ya3NwYWNlIHsKICAgIG1vZGVsIHsKICAgICAgICAvLyDQn9C+0LvRjNC30L7QstCw0YLQtdC70LgKICAgICAgICBkZXZlbG9wZXIgPSBwZXJzb24gItCg0LDQt9GA0LDQsdC+0YLRh9C40LoiICLQp9C10LvQvtCy0LXQuiwg0LfQsNC90LjQvNCw0Y7RidC40LnRgdGPINGB0L7Qt9C00LDQvdC40LXQvCwg0YLQtdGB0YLQuNGA0L7QstCw0L3QuNC10Lwg0Lgg0L/QvtC00LTQtdGA0LbQutC+0Lkg0L/RgNC+0LPRgNCw0LzQvNC90L7Qs9C+INC+0LHQtdGB0L/QtdGH0LXQvdC40Y8uIgogICAgICAgIGN1c3RvbWVyID0gcGVyc29uICLQn9C+0LvRjNC30L7QstCw0YLQtdC70YwiICLQmtC+0L3QtdGH0L3Ri9C5INC/0L7Qu9GM0LfQvtCy0LDRgtC10LvRjCDQv9GA0L7QtNGD0LrRgtCwLCDQutC+0YLQvtGA0YvQuSDQstC30LDQuNC80L7QtNC10LnRgdGC0LLRg9C10YIg0YEg0YHQuNGB0YLQtdC80L7QuSDQtNC70Y8g0YDQtdGI0LXQvdC40Y8g0YHQstC+0LjRhSDQt9Cw0LTQsNGHIiAiQ3VzdG9tZXIiCiAgICAgICAgYWRtaW4gPSBwZXJzb24gItCQ0LTQvNC40L3QuNGB0YLRgNCw0YLQvtGAIiAi0KPQv9GA0LDQstC70Y/QtdGCINC40L3RhNGA0LDRgdGC0YDRg9C60YLRg9GA0L7QuSDRgdC40YHRgtC10LzRizog0L3QsNGB0YLRgNCw0LjQstCw0LXRgiDQv9GA0LDQstCwINC00L7RgdGC0YPQv9CwLCDQvtCx0LXRgdC/0LXRh9C40LLQsNC10YIg0LHQtdC30L7Qv9Cw0YHQvdC+0YHRgtGMLCDQvtCx0L3QvtCy0LvRj9C10YIg0LrQvtC80L/QvtC90LXQvdGC0Ysg0Lgg0YPRgdGC0YDQsNC90Y/QtdGCINGC0LXRhdC90LjRh9C10YHQutC40LUg0YHQsdC+0LguIgoKICAgICAgICAvLyDQntGB0L3QvtCy0L3QsNGPINGB0LjRgdGC0LXQvNCwCiAgICAgICAgZW1haWxTeXN0ZW0gPSBzb2Z0d2FyZVN5c3RlbSAiRS1NYWlsIFN5c3RlbSIgItCS0LXQsS3RgdC10YDQstC40YEg0Y3Qu9C10LrRgtGA0L7QvdC90L7QuSDQv9C+0YfRgtGLIiB7CiAgICAgICAgICAgIGFwaUdhdGV3YXkgPSBjb250YWluZXIgIkFQSSBHYXRld2F5IiAi0JzQsNGA0YjRgNGD0YLQuNC30LDRhtC40Y8g0LfQsNC/0YDQvtGB0L7QsiDQuiDRgdC10YDQstC40YHQsNC8LiDQkNGD0YLQtdC90YLQuNGE0LjQutCw0YbQuNGPICjQv9GA0L7QstC10YDQutCwIEpXVCkuINCb0L7Qs9C40YDQvtCy0LDQvdC40LUg0Lgg0LzQvtC90LjRgtC+0YDQuNC90LMuIiAiUHl0aG9uIChGYXN0QVBJKSIgIkFQSSBHYXRld2F5IgogICAgICAgICAgICBtb2JpbGVBcHBsaWNhdGlvbiA9IGNvbnRhaW5lciAiTW9iaWxlIEFwcGxpY2F0aW9uIiAi0J3QsNGC0LjQstC90L7QtSDQvNC+0LHQuNC70YzQvdC+0LUg0L/RgNC40LvQvtC20LXQvdC40LUg0YEgcHVzaC3Rg9Cy0LXQtNC+0LzQu9C10L3QuNGP0LzQuCDQuCDQvtGE0LvQsNC50L0t0YDQtdC20LjQvNC+0LwiICJTd2lmdCwgS290bGluIiAiTW9iaWxlIENsaWVudCIKICAgICAgICAgICAgd2ViQXBwbGljYXRpb24gPSBjb250YWluZXIgIldlYiBBcHBsaWNhdGlvbiIgItCe0YLQstC10YfQsNC10YIg0LfQsCDRgNC10L3QtNC10YDQuNC90LMg0L/QuNGB0LXQvCwg0YTQvtGA0Lwg0Lgg0L3QsNGB0YLRgNC+0LXQui4iICJSZWFjdC5qcyIgIldlYiBBcHBsaWNhdGlvbiIgCiAgICAgICAgICAgIGVtYWlsU2VydmljZSA9IGNvbnRhaW5lciAiRW1haWwgU2VydmljZSIgItCh0L7Qt9C00LDQvdC40LUg0L3QvtCy0L7Qs9C+INC/0LjRgdGM0LzQsCDQsiDQv9Cw0L/QutC1LiDQn9C+0LvRg9GH0LXQvdC40LUg0LLRgdC10YUg0L/QuNGB0LXQvCDQsiDQv9Cw0L/QutC1LiDQn9C+0LvRg9GH0LXQvdC40LUg0L/QuNGB0YzQvNCwINC/0L4g0LrQvtC00YMgKElEKS4iICJQeXRob24gKEZhc3RBUEkpIgogICAgICAgICAgICBmb2xkZXJTZXJ2aWNlID0gY29udGFpbmVyICJGb2xkZXIgU2VydmljZSIgItCh0L7Qt9C00LDQvdC40LUg0L3QvtCy0L7QuSDQv9C+0YfRgtC+0LLQvtC5INC/0LDQv9C60LguINCf0L7Qu9GD0YfQtdC90LjQtSDQv9C10YDQtdGH0L3RjyDQstGB0LXRhSDQv9Cw0L/QvtC6INC/0L7Qu9GM0LfQvtCy0LDRgtC10LvRjy4iICJQeXRob24gKEZhc3RBUEkpIgogICAgICAgICAgICB1c2VyU2VydmljZSA9IGNvbnRhaW5lciAiVXNlciBTZXJ2aWNlIiAi0KHQvtC30LTQsNC90LjQtSDQvdC+0LLQvtCz0L4g0L/QvtC70YzQt9C+0LLQsNGC0LXQu9GPLiDQn9C+0LjRgdC6INC/0L7Qu9GM0LfQvtCy0LDRgtC10LvRjyDQv9C+INC70L7Qs9C40L3Rgy4g0J/QvtC40YHQuiDQv9C+0LvRjNC30L7QstCw0YLQtdC70Y8g0L/QviDQvNCw0YHQutC1INC40LzQtdC90Lgg0Lgg0YTQsNC80LjQu9C40LguIiAiUHl0aG9uIChGYXN0QVBJKSIKICAgICAgICB9CgogICAgICAgIC8vINCS0L3QtdGI0L3QuNC1INGB0LjRgdGC0LXQvNGLCiAgICAgICAgc21wdFNlcnZlciA9IHNvZnR3YXJlU3lzdGVtICJTTVBULdGB0LXRgNCy0LXRgCIgItCe0YLQv9GA0LDQstC60LAg0LjRgdGF0L7QtNGP0YnQuNGFINC/0LjRgdC10LwiICJFeHRlcm5hbCBzeXN0ZW0iCiAgICAgICAgaW1hcFNlcnZlciA9IHNvZnR3YXJlU3lzdGVtICJJTUFQLdGB0LXRgNCy0LXRgCIgItCf0L7Qu9GD0YfQtdC90LjQtSDQv9C40YHQtdC8INGBINCy0L3QtdGI0L3QuNGFINC/0L7Rh9GC0L7QstGL0YUg0Y/RidC40LrQvtCyIiAiRXh0ZXJuYWwgc3lzdGVtIgogICAgICAgIG9hdXRoU2VydmljZSA9IHNvZnR3YXJlU3lzdGVtICJPQXV0aCDRgdC10YDQstC40YEiICLQodGC0L7RgNC+0L3QvdC40Lkg0YHQtdGA0LLQuNGBINCw0YPRgtC10L3RgtC40YTQuNC60LDRhtC40LgiICJFeHRlcm5hbCBzeXN0ZW0iCiAgICAgICAgY2xvdWRTdG9yYWdlID0gc29mdHdhcmVTeXN0ZW0gItCe0LHQu9Cw0YfQvdC+0LUg0YXRgNCw0L3QuNC70LjRidC1IiAi0KXRgNCw0L3QuNC70LjRidC1INC00LvRjyDQstC70L7QttC10L3QuNC5IiAiRXh0ZXJuYWwgc3lzdGVtIgoKICAgICAgICAvLyDQmtC+0L3RgtC10LrRgdGC0L3Ri9C1INCy0LfQsNC40LzQvtC00LXQudGB0YLQstC40Y8KICAgICAgICBjdXN0b21lciAtPiBlbWFpbFN5c3RlbSAi0JjRgdC/0L7Qu9GM0LfRg9C10YIg0LTQu9GPINC+0YLQv9GA0LDQstC60Lgv0L/QvtC70YPRh9C10L3QuNGPINC/0LjRgdC10LwsINCj0L/RgNCw0LLQu9C10L3QuNGPINC60L7QvdGC0LDQutGC0LDQvNC4LCDQndCw0YHRgtGA0L7QudC60Lgg0YTQuNC70YzRgtGA0L7Qsiwg0KDQsNCx0L7RgtGLINGBINCy0LvQvtC20LXQvdC40Y/QvNC4IgogICAgICAgIGRldmVsb3BlciAtPiBlbWFpbFN5c3RlbSAi0KDQsNC30YDQsNCx0LDRgtGL0LLQsNC10YIg0Lgg0L/QvtC00LTQtdGA0LbQuNCy0LDQtdGCOiDQndC+0LLRi9C1INGE0YPQvdC60YbQuNC4LCDQmNGB0L/RgNCw0LLQu9C10L3QuNC1INC+0YjQuNCx0L7Quiwg0J7Qv9GC0LjQvNC40LfQsNGG0LjRjiDQv9GA0L7QuNC30LLQvtC00LjRgtC10LvRjNC90L7RgdGC0LgiCiAgICAgICAgYWRtaW4gLT4gZW1haWxTeXN0ZW0gItCQ0LTQvNC40L3QuNGB0YLRgNC40YDRg9C10YI6INCY0L3RhNGA0LDRgdGC0YDRg9C60YLRg9GA0YMsINCf0YDQsNCy0LAg0LTQvtGB0YLRg9C/0LAsINCc0L7QvdC40YLQvtGA0LjQvdCzLCDQoNC10LfQtdGA0LLQvdC+0LUg0LrQvtC/0LjRgNC+0LLQsNC90LjQtSIKICAgICAgICBlbWFpbFN5c3RlbSAtPiBzbXB0U2VydmVyICLQkNGB0LjQvdGF0YDQvtC90L3QsNGPINC+0YLQv9GA0LDQstC60LAg0LjRgdGF0L7QtNGP0YnQuNGFINC/0LjRgdC10LwsIFRMUyDRiNC40YTRgNC+0LLQsNC90LjQtSwgUmV0cnkg0L/QvtC70LjRgtC40LrQuCIKICAgICAgICBlbWFpbFN5c3RlbSAtPiBpbWFwU2VydmVyICLQodC40L3RhdGA0L7QvdC40LfQsNGG0LjRjyDQstGF0L7QtNGP0YnQuNGFINC/0LjRgdC10LwsINCf0LXRgNC40L7QtNC40YfQtdGB0LrQuNC5INC+0L/RgNC+0YEsIElETEUg0YDQsNGB0YjQuNGA0LXQvdC40LUiCiAgICAgICAgZW1haWxTeXN0ZW0gLT4gb2F1dGhTZXJ2aWNlICJGZWRlcmF0ZWQgQXV0aGVudGljYXRpb24sIE9BdXRoIDIuMCBmbG93cywgSldUINCy0LDQu9C40LTQsNGG0LjRjyIKICAgICAgICBlbWFpbFN5c3RlbSAtPiBjbG91ZFN0b3JhZ2UgItCl0YDQsNC90LXQvdC40LUg0LLQu9C+0LbQtdC90LjQuSwg0KfQsNGB0YLQuNGH0L3QsNGPINC30LDQs9GA0YPQt9C60LAsIENETiDQuNC90YLQtdCz0YDQsNGG0LjRjyIKCiAgICAgICAgLy8g0JLQt9Cw0LjQvNC+0LTQtdC50YHRgtCy0LjQtSBjb250YWluZXIKICAgICAgICBjdXN0b21lciAtPiBtb2JpbGVBcHBsaWNhdGlvbiAi0LLQuNC00LjRgiDQv9C40YHRjNC80LAsINC/0L7Rh9GC0L7QstGL0LUg0L/QsNC/0LrQuCDQv9C+0LvRjNC30L7QstCw0YLQtdC70Y8g0LjRgdC/0L7Qu9GM0LfRg9GPIgogICAgICAgIGN1c3RvbWVyIC0+IHdlYkFwcGxpY2F0aW9uICLQstC40LTQuNGCINC/0LjRgdGM0LzQsCwg0L/QvtGH0YLQvtCy0YvQtSDQv9Cw0L/QutC4INC/0L7Qu9GM0LfQvtCy0LDRgtC10LvRjyDQuNGB0L/QvtC70YzQt9GD0Y8iCiAgICAgICAgbW9iaWxlQXBwbGljYXRpb24gLT4gYXBpR2F0ZXdheSAi0LLRi9C/0L7Qu9C90Y/QtdGCINCy0YvQt9C+0LIgYXBpINGH0LXRgNC10LciICJKU09OL0hUVFBTIgogICAgICAgIHdlYkFwcGxpY2F0aW9uIC0+IGFwaUdhdGV3YXkgItCy0YvQv9C+0LvQvdGP0LXRgiDQstGL0LfQvtCyIGFwaSDRh9C10YDQtdC3IiAiSlNPTi9IVFRQUyIKICAgICAgICBhcGlHYXRld2F5IC0+IG9hdXRoU2VydmljZSAi0L/RgNC+0LLQtdGA0Y/QtdGCINGC0L7QutC10L0g0YfQtdGA0LXQtyIgIkpTT04vSFRUUFMiCiAgICAgICAgYXBpR2F0ZXdheSAtPiBlbWFpbFNlcnZpY2UgItGB0L7Qt9C00LDQtdGCINC/0LjRgdGM0LzQviwg0L/QvtC70YPRh9Cw0LXRgiDQv9C40YHRjNC80L4g0L/QviBJRCwg0LfQsNCz0YDRg9C20LDQtdGCINCy0LvQvtC20LXQvdC40Y8g0YfQtdGA0LXQtyIgIkpTT04vSFRUUFMiCiAgICAgICAgYXBpR2F0ZXdheSAtPiBmb2xkZXJTZXJ2aWNlICLRgdC+0LfQtNCw0LXRgiDQv9Cw0L/QutC4INC00LvRjyDQv9C40YHQtdC8LCDQv9C+0LvRg9GH0LDQtdGCINGB0L/QuNGB0LrQuCDQv9Cw0L/QvtC6INC/0L7Qu9GM0LfQvtCy0LDRgtC10LvRjyDRh9C10YDQtdC3IiAiSlNPTi9IVFRQUyIKICAgICAgICBhcGlHYXRld2F5IC0+IHVzZXJTZXJ2aWNlICLRgNC10LPQuNGB0YLRgNC40YDRg9C10YIg0L3QvtCy0YvRhSDQv9C+0LvRjNC30L7QstCw0YLQtdC70LXQuSwg0L/QvtC40YHQuiDQv9C+0LvRjNC30L7QstCw0YLQtdC70LXQuSDQv9C+INC70L7Qs9C40L3RgyDQuNC70Lgg0LjQvNC10L3QuCDRh9C10YDQtdC3IiAiSlNPTi9IVFRQUyIKICAgIH0KCiAgICB2aWV3cyB7CiAgICAgICAgCiAgICAgICAgc3lzdGVtQ29udGV4dCBlbWFpbHN5c3RlbSB7CiAgICAgICAgICAgIGluY2x1ZGUgKgogICAgICAgICAgICBhdXRvTGF5b3V0CiAgICAgICAgICAgIGRlc2NyaXB0aW9uICLQmtC+0L3RgtC10LrRgdGCINC4INC10LPQviDQstC30LDQuNC80L7QtNC10LnRgdGC0LLQuNC1INGBINC/0L7Qu9GM0LfQvtCy0LDRgtC10LvRj9C80Lgg0Lgg0YHQuNGB0YLQtdC80LDQvNC4IgogICAgICAgIH0KCiAgICAgICAgY29udGFpbmVyIGVtYWlsc3lzdGVtIHsKICAgICAgICAgICAgaW5jbHVkZSAqCiAgICAgICAgICAgIGF1dG9MYXlvdXQKICAgICAgICAgICAgZGVzY3JpcHRpb24gItCa0L7QvdGC0LXQudC90LXRgCDQstC10LEt0YHQtdGA0LLQuNGB0LAg0Y3Qu9C10LrRgtGA0L7QvdC90L7QuSDQv9C+0YfRgtGLIgogICAgICAgIH0KCiAgICAgICAgZHluYW1pYyBlbWFpbHN5c3RlbSAiRHluYW1pYyIgewogICAgICAgICAgICBhdXRvTGF5b3V0IGxyCiAgICAgICAgICAgIGRlc2NyaXB0aW9uICLQn9C+0YHQu9C10LTQvtCy0LDRgtC10LvRjNC90L7RgdGC0Ywg0LTQtdC50YHRgtCy0LjQuSDQv9C+0LvRjNC30L7QstCw0YLQtdC70Y8g0L/RgNC4INGA0LXQs9C40YHRgtGA0LDRhtC40LgsINGB0L7Qt9C00LDQvdC40Lgg0L/QsNC/0LrQuCDQuCDQvtGC0L/RgNCw0LLQutC1INC/0LjRgdGM0LzQsC4iCiAgICAgICAgICAgIAogICAgICAgICAgICAvLyDQqNCw0LPQuCDRgdGG0LXQvdCw0YDQuNGPCiAgICAgICAgICAgIGN1c3RvbWVyIC0+IG1vYmlsZUFwcGxpY2F0aW9uICLQoNC10LPQuNGB0YLRgNCw0YbQuNGPOiDQstCy0L7QtNC40YIg0LvQvtCz0LjQvSDQuCDQv9Cw0YDQvtC70YwiCiAgICAgICAgICAgIG1vYmlsZUFwcGxpY2F0aW9uIC0+IGFwaUdhdGV3YXkgIlBPU1QgL2FwaS91c2VycyIKICAgICAgICAgICAgYXBpR2F0ZXdheSAtPiB1c2VyU2VydmljZSAi0KHQvtGF0YDQsNC90LjRgtGMINC/0L7Qu9GM0LfQvtCy0LDRgtC10LvRjyIKCiAgICAgICAgICAgIGN1c3RvbWVyIC0+IG1vYmlsZUFwcGxpY2F0aW9uICLQktGF0L7QtDog0LLQstC+0LTQuNGCINC70L7Qs9C40L0v0L/QsNGA0L7Qu9GMIgogICAgICAgICAgICBtb2JpbGVBcHBsaWNhdGlvbiAtPiBhcGlHYXRld2F5ICJQT1NUIC9hcGkvb2F1dGgvdG9rZW4iCiAgICAgICAgICAgIGFwaUdhdGV3YXkgLT4gb2F1dGhTZXJ2aWNlICLQodCz0LXQvdC10YDQuNGA0L7QstCw0YLRjCBKV1QiCgogICAgICAgICAgICBjdXN0b21lciAtPiBtb2JpbGVBcHBsaWNhdGlvbiAi0KHQvtC30LTQsNC90LjQtSDQv9Cw0L/QutC4OiDQstCy0L7QtNC40YIg0L3QsNC30LLQsNC90LjQtSIKICAgICAgICAgICAgbW9iaWxlQXBwbGljYXRpb24gLT4gYXBpR2F0ZXdheSAiUE9TVCAvYXBpL2ZvbGRlcnMiCiAgICAgICAgICAgIGFwaUdhdGV3YXkgLT4gb2F1dGhTZXJ2aWNlICLQn9GA0L7QstC10YDQuNGC0Ywg0YLQvtC60LXQvSIKICAgICAgICAgICAgYXBpR2F0ZXdheSAtPiBmb2xkZXJTZXJ2aWNlICLQodC+0LfQtNCw0YLRjCDQv9Cw0L/QutGDIgoKICAgICAgICAgICAgY3VzdG9tZXIgLT4gbW9iaWxlQXBwbGljYXRpb24gItCe0YLQv9GA0LDQstC60LAg0L/QuNGB0YzQvNCwOiDQt9Cw0L/QvtC70L3Rj9C10YIg0YTQvtGA0LzRgyIKICAgICAgICAgICAgbW9iaWxlQXBwbGljYXRpb24gLT4gYXBpR2F0ZXdheSAiUE9TVCAvYXBpL2VtYWlscyIKICAgICAgICAgICAgYXBpR2F0ZXdheSAtPiBvYXV0aFNlcnZpY2UgItCf0YDQvtCy0LXRgNC40YLRjCDRgtC+0LrQtdC9IgogICAgICAgICAgICBhcGlHYXRld2F5IC0+IGVtYWlsU2VydmljZSAi0KHQvtGF0YDQsNC90LjRgtGMINC/0LjRgdGM0LzQviIKICAgICAgICB9CgogICAgICAgIHN0eWxlcyB7CiAgICAgICAgICAgIGVsZW1lbnQgIlBlcnNvbiIgewogICAgICAgICAgICAgICAgY29sb3IgI2ZmZmZmZgogICAgICAgICAgICAgICAgZm9udFNpemUgMjIKICAgICAgICAgICAgICAgIHNoYXBlIFBlcnNvbgogICAgICAgICAgICB9CiAgICAgICAgICAgIGVsZW1lbnQgIldlYiBBcHBsaWNhdGlvbiIgewogICAgICAgICAgICAgICAgc2hhcGUgV2ViQnJvd3NlcgogICAgICAgICAgICB9CiAgICAgICAgICAgIGVsZW1lbnQgIk1vYmlsZSBBcHBsaWNhdGlvbiIgewogICAgICAgICAgICAgICAgc2hhcGUgTW9iaWxlRGV2aWNlTGFuZHNjYXBlCiAgICAgICAgICAgIH0KICAgICAgICAgICAgZWxlbWVudCAiRGF0YWJhc2UiIHsKICAgICAgICAgICAgICAgIHNoYXBlIEN5bGluZGVyCiAgICAgICAgICAgIH0KICAgICAgICAgICAgZWxlbWVudCAiQ29tcG9uZW50IiB7CiAgICAgICAgICAgICAgICBiYWNrZ3JvdW5kICM4NWJiZjAKICAgICAgICAgICAgICAgIGNvbG9yICMwMDAwMDAKICAgICAgICAgICAgfQogICAgICAgICAgICBlbGVtZW50ICJTb2Z0d2FyZSBTeXN0ZW0iIHsKICAgICAgICAgICAgICAgIGJhY2tncm91bmQgIzExNjhiZAogICAgICAgICAgICAgICAgY29sb3IgI2ZmZmZmZgogICAgICAgICAgICB9CiAgICAgICAgICAgIGVsZW1lbnQgIkNvbnRhaW5lciIgewogICAgICAgICAgICAgICAgYmFja2dyb3VuZCAjNDM4ZGQ1CiAgICAgICAgICAgICAgICBjb2xvciAjZmZmZmZmCiAgICAgICAgICAgIH0KCiAgICAgICAgICAgIGVsZW1lbnQgIkN1c3RvbWVyIiB7CiAgICAgICAgICAgICAgICBiYWNrZ3JvdW5kICMwODQyN2IKICAgICAgICAgICAgfQogICAgICAgICAgICBlbGVtZW50ICJFeHRlcm5hbCBzeXN0ZW0iIHsKICAgICAgICAgICAgICAgIGJhY2tncm91bmQgI2RkZGRkZAogICAgICAgICAgICAgICAgY29sb3IgI2ZmZmZmZgogICAgICAgICAgICB9CiAgICAgICAgfQogICAgfQp9"
+  },
+  "views" : {
+    "configuration" : {
+      "branding" : { },
+      "lastSavedView" : "SystemContext-001",
+      "metadataSymbols" : "SquareBrackets",
+      "styles" : {
+        "elements" : [ {
+          "color" : "#ffffff",
+          "fontSize" : 22,
+          "shape" : "Person",
+          "tag" : "Person"
+        }, {
+          "shape" : "WebBrowser",
+          "tag" : "Web Application"
+        }, {
+          "shape" : "MobileDeviceLandscape",
+          "tag" : "Mobile Application"
+        }, {
+          "shape" : "Cylinder",
+          "tag" : "Database"
+        }, {
+          "background" : "#85bbf0",
+          "color" : "#000000",
+          "tag" : "Component"
+        }, {
+          "background" : "#1168bd",
+          "color" : "#ffffff",
+          "tag" : "Software System"
+        }, {
+          "background" : "#438dd5",
+          "color" : "#ffffff",
+          "tag" : "Container"
+        }, {
+          "background" : "#08427b",
+          "tag" : "Customer"
+        }, {
+          "background" : "#dddddd",
+          "color" : "#ffffff",
+          "tag" : "External system"
+        } ]
+      },
+      "terminology" : { }
+    },
+    "containerViews" : [ {
+      "automaticLayout" : {
+        "applied" : false,
+        "edgeSeparation" : 0,
+        "implementation" : "Graphviz",
+        "nodeSeparation" : 300,
+        "rankDirection" : "TopBottom",
+        "rankSeparation" : 300,
+        "vertices" : false
+      },
+      "description" : "Контейнер веб-сервиса электронной почты",
+      "elements" : [ {
+        "id" : "2",
+        "x" : 0,
+        "y" : 0
+      }, {
+        "id" : "5",
+        "x" : 0,
+        "y" : 0
+      }, {
+        "id" : "6",
+        "x" : 0,
+        "y" : 0
+      }, {
+        "id" : "7",
+        "x" : 0,
+        "y" : 0
+      }, {
+        "id" : "8",
+        "x" : 0,
+        "y" : 0
+      }, {
+        "id" : "9",
+        "x" : 0,
+        "y" : 0
+      }, {
+        "id" : "10",
+        "x" : 0,
+        "y" : 0
+      }, {
+        "id" : "13",
+        "x" : 0,
+        "y" : 0
+      } ],
+      "externalSoftwareSystemBoundariesVisible" : false,
+      "generatedKey" : true,
+      "key" : "Container-001",
+      "order" : 2,
+      "relationships" : [ {
+        "id" : "22"
+      }, {
+        "id" : "23"
+      }, {
+        "id" : "24"
+      }, {
+        "id" : "25"
+      }, {
+        "id" : "26"
+      }, {
+        "id" : "27"
+      }, {
+        "id" : "28"
+      }, {
+        "id" : "29"
+      } ],
+      "softwareSystemId" : "4"
+    } ],
+    "dynamicViews" : [ {
+      "automaticLayout" : {
+        "applied" : false,
+        "edgeSeparation" : 0,
+        "implementation" : "Graphviz",
+        "nodeSeparation" : 300,
+        "rankDirection" : "LeftRight",
+        "rankSeparation" : 300,
+        "vertices" : false
+      },
+      "description" : "Последовательность действий пользователя при регистрации, создании папки и отправке письма.",
+      "elementId" : "4",
+      "elements" : [ {
+        "id" : "2",
+        "x" : 0,
+        "y" : 0
+      }, {
+        "id" : "5",
+        "x" : 0,
+        "y" : 0
+      }, {
+        "id" : "6",
+        "x" : 0,
+        "y" : 0
+      }, {
+        "id" : "8",
+        "x" : 0,
+        "y" : 0
+      }, {
+        "id" : "9",
+        "x" : 0,
+        "y" : 0
+      }, {
+        "id" : "10",
+        "x" : 0,
+        "y" : 0
+      }, {
+        "id" : "13",
+        "x" : 0,
+        "y" : 0
+      } ],
+      "externalBoundariesVisible" : false,
+      "key" : "Dynamic",
+      "order" : 3,
+      "relationships" : [ {
+        "description" : "Регистрация: вводит логин и пароль",
+        "id" : "22",
+        "order" : "1",
+        "response" : false
+      }, {
+        "description" : "POST /api/users",
+        "id" : "24",
+        "order" : "2",
+        "response" : false
+      }, {
+        "description" : "Сохранить пользователя",
+        "id" : "29",
+        "order" : "3",
+        "response" : false
+      }, {
+        "description" : "Вход: вводит логин/пароль",
+        "id" : "22",
+        "order" : "4",
+        "response" : false
+      }, {
+        "description" : "POST /api/oauth/token",
+        "id" : "24",
+        "order" : "5",
+        "response" : false
+      }, {
+        "description" : "Сгенерировать JWT",
+        "id" : "26",
+        "order" : "6",
+        "response" : false
+      }, {
+        "description" : "Создание папки: вводит название",
+        "id" : "22",
+        "order" : "7",
+        "response" : false
+      }, {
+        "description" : "POST /api/folders",
+        "id" : "24",
+        "order" : "8",
+        "response" : false
+      }, {
+        "description" : "Проверить токен",
+        "id" : "26",
+        "order" : "9",
+        "response" : false
+      }, {
+        "description" : "Создать папку",
+        "id" : "28",
+        "order" : "10",
+        "response" : false
+      }, {
+        "description" : "Отправка письма: заполняет форму",
+        "id" : "22",
+        "order" : "11",
+        "response" : false
+      }, {
+        "description" : "POST /api/emails",
+        "id" : "24",
+        "order" : "12",
+        "response" : false
+      }, {
+        "description" : "Проверить токен",
+        "id" : "26",
+        "order" : "13",
+        "response" : false
+      }, {
+        "description" : "Сохранить письмо",
+        "id" : "27",
+        "order" : "14",
+        "response" : false
+      } ]
+    } ],
+    "systemContextViews" : [ {
+      "automaticLayout" : {
+        "applied" : true,
+        "edgeSeparation" : 0,
+        "implementation" : "Graphviz",
+        "nodeSeparation" : 300,
+        "rankDirection" : "TopBottom",
+        "rankSeparation" : 300,
+        "vertices" : false
+      },
+      "description" : "Контекст и его взаимодействие с пользователями и системами",
+      "dimensions" : {
+        "height" : 2000,
+        "width" : 3100
+      },
+      "elements" : [ {
+        "id" : "1",
+        "x" : 649,
+        "y" : 151
+      }, {
+        "id" : "2",
+        "x" : 1349,
+        "y" : 151
+      }, {
+        "id" : "3",
+        "x" : 2049,
+        "y" : 151
+      }, {
+        "id" : "4",
+        "x" : 1324,
+        "y" : 851
+      }, {
+        "id" : "11",
+        "x" : 199,
+        "y" : 1451
+      }, {
+        "id" : "12",
+        "x" : 949,
+        "y" : 1451
+      }, {
+        "id" : "13",
+        "x" : 1699,
+        "y" : 1451
+      }, {
+        "id" : "14",
+        "x" : 2449,
+        "y" : 1451
+      } ],
+      "enterpriseBoundaryVisible" : true,
+      "generatedKey" : true,
+      "key" : "SystemContext-001",
+      "order" : 1,
+      "relationships" : [ {
+        "id" : "15"
+      }, {
+        "id" : "16"
+      }, {
+        "id" : "17"
+      }, {
+        "id" : "18"
+      }, {
+        "id" : "19"
+      }, {
+        "id" : "20"
+      }, {
+        "id" : "21"
+      } ],
+      "softwareSystemId" : "4"
+    } ]
+  }
+}

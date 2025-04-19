@@ -3,6 +3,8 @@ version: '3'
 services:
   auth-service:
     build: ./services/auth_service/
+    env_file:
+      - .env
     ports:
       - 8000:8000
     depends_on:
@@ -41,9 +43,11 @@ services:
       - ./db/users/data:/var/lib/postgresql/data
       - ./db/users/init:/docker-entrypoint-initdb.d
     restart: always
+    env_file:
+      - .env
     environment:
-      POSTGRES_DB: db-users
-      POSTGRES_USER: admin
-      POSTGRES_PASSWORD: secret
+      POSTGRES_DB: ${POSTGRES_DB}
+      POSTGRES_USER: ${POSTGRES_USER}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
     ports:
       - 5432:5432

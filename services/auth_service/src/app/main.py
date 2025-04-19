@@ -2,45 +2,17 @@ import json
 import os
 from fastapi import FastAPI, HTTPException, Depends, status
 from fastapi.security import OAuth2PasswordBearer, OAuth2PasswordRequestForm
-from pydantic import BaseModel
 from typing import List, Optional
 from datetime import datetime, timedelta, timezone
 from jose import JWTError, jwt
 from passlib.context import CryptContext
+from contextlib import asynccontextmanager
 
-from sqlalchemy import create_engine
-from sqlalchemy.ext.declarative import declarative_base
-
-from sqlalchemy import String, Integer
-from sqlalchemy.orm import mapped_column, Mapped, sessionmaker
-
-
-Base = declarative_base()
-
-
-class User(Base):
-    __tablename__ = "users"
-
-    id: Mapped[int] = mapped_column(primary_key=True)
-    username: Mapped[str] = mapped_column(String)
-    email: Mapped[str] = mapped_column(String)
-    hashed_password: Mapped[str] = mapped_column(String)
-    age: Mapped[int] = mapped_column(Integer)
-
-
-DATABASE_URL = "postgresql://admin:secret@db-users:5432/db-users"
-engine = create_engine(DATABASE_URL, echo=True)
-Base.metadata.create_all(bind=engine)
-Session = sessionmaker(autocommit=False, autoflush=False, bind=engine)
-
-
-# Зависимости для получения сессии базы данных
-def get_db():
-    db = Session()
-    try:
-        yield db
-    finally:
-        db.close()
+from app.services import UserDAO
+from app.db import Session
+from app.models import User
+from app.settings import settings
+from app.schemas import SUser
 
 
 def load_data_from_json(filename):
@@ -64,36 +36,14 @@ def load_data_from_json(filename):
         session.close()
 
 
-load_data_from_json("test_data.json")
-
-# Секретный ключ для подписи JWT
-SECRET_KEY = "your-secret-key"
-ALGORITHM = "HS256"
-ACCESS_TOKEN_EXPIRE_MINUTES = 30
+@asynccontextmanager
+async def lifespan(app: FastAPI):
+    load_data_from_json("test_data.json")
 
 app = FastAPI()
 
-
-# Модель данных для пользователя
-class SUser(BaseModel):
-    id: int
-    username: str
-    email: str
-    hashed_password: str
-    age: Optional[int] = None
-
-
-# Временное хранилище для пользователей
-users_db = []
-
-# Псевдо-база данных пользователей
-client_db = {
-    "admin":  "$2b$12$EixZaYVK1fsbw1ZfbX3OXePaWxn96p36WQoeG6Lruj3vjPGga31lW"
-}
-
 # Настройка паролей
 pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
-
 # Настройка OAuth2
 oauth2_scheme = OAuth2PasswordBearer(tokenUrl="token")
 
@@ -106,7 +56,11 @@ async def get_current_client(token: str = Depends(oauth2_scheme)):
         headers={"WWW-Authenticate": "Bearer"},
     )
     try:
-        payload = jwt.decode(token, SECRET_KEY, algorithms=[ALGORITHM])
+        payload = jwt.decode(
+            token,
+            settings.SECRET_KEY,
+            algorithms=[settings.ALGORITHM]
+        )
         username: str = payload.get("sub")
         if username is None:
             raise credentials_exception
@@ -124,7 +78,11 @@ def create_access_token(data: dict, expires_delta: Optional[timedelta] = None):
     else:
         expire = datetime.now(timezone.utc) + timedelta(minutes=15)
     to_encode.update({"exp": expire})
-    encoded_jwt = jwt.encode(to_encode, SECRET_KEY, algorithm=ALGORITHM)
+    encoded_jwt = jwt.encode(
+        to_encode,
+        settings.SECRET_KEY,
+        algorithm=settings.ALGORITHM
+    )
     return encoded_jwt
 
 
@@ -133,14 +91,16 @@ def create_access_token(data: dict, expires_delta: Optional[timedelta] = None):
 async def login_for_access_token(
     form_data: OAuth2PasswordRequestForm = Depends()
 ):
+    user = UserDAO.find_one_or_none(username=form_data.username)
     password_check = False
-    if form_data.username in client_db:
-        password = client_db[form_data.username]
-        if pwd_context.verify(form_data.password, password):
+    if user:
+        if pwd_context.verify(form_data.password, user.hashed_password):
             password_check = True
 
     if password_check:
-        access_token_expires = timedelta(minutes=ACCESS_TOKEN_EXPIRE_MINUTES)
+        access_token_expires = timedelta(
+            minutes=settings.ACCESS_TOKEN_EXPIRE_MINUTES
+        )
         access_token = create_access_token(data={"sub": form_data.username},
                                            expires_delta=access_token_expires)
         return {"access_token": access_token, "token_type": "bearer"}
@@ -155,46 +115,59 @@ async def login_for_access_token(
 # GET /users - Получить всех пользователей (требует аутентификации)
 @app.get("/users", response_model=List[SUser])
 def get_users(current_user: str = Depends(get_current_client)):
-    return users_db
+    users = UserDAO.find_all()
+    return users
 
 
 # GET /users/{user_id} - Получить пользователя по ID (требует аутентификации)
 @app.get("/users/{user_id}", response_model=SUser)
 def get_user(user_id: int, current_user: str = Depends(get_current_client)):
-    for user in users_db:
-        if user.id == user_id:
-            return user
+    user = UserDAO.find_one_or_none(id=user_id)
+    if user:
+        return user
     raise HTTPException(status_code=404, detail="User not found")
 
 
 # POST /users - Создать нового пользователя (требует аутентификации)
 @app.post("/users", response_model=SUser)
-def create_user(user: SUser, current_user: str = Depends(get_current_client)):
-    for u in users_db:
-        if u.id == user.id:
-            raise HTTPException(status_code=404, detail="User already exist")
-    users_db.append(user)
-    return user
+def create_user(
+    new_user: SUser
+):
+    new_user.hashed_password = pwd_context.encrypt(new_user.hashed_password)
+    username = UserDAO.find_one_or_none(username=new_user.username)
+    if username:
+        raise HTTPException(status_code=404, detail="Username already exist")
+    email = UserDAO.find_one_or_none(email=new_user.email)
+    if email:
+        raise HTTPException(
+            status_code=404,
+            detail="Email is already registered"
+        )
+    UserDAO.add_(**new_user.model_dump())
+    return new_user
 
 
 # PUT /users/{user_id} - Обновить пользователя по ID (требует аутентификации)
 @app.put("/users/{user_id}", response_model=SUser)
 def update_user(user_id: int, updated_user: SUser,
                 current_user: str = Depends(get_current_client)):
-    for index, user in enumerate(users_db):
-        if user.id == user_id:
-            users_db[index] = updated_user
-            return updated_user
+    user = UserDAO.find_one_or_none(id=user_id)
+    if user:
+        updated_user.hashed_password = pwd_context.encrypt(
+            updated_user.hashed_password
+        )
+        UserDAO.update_(model_id=user_id, **updated_user.model_dump())
+        return updated_user
     raise HTTPException(status_code=404, detail="User not found")
 
 
 # DELETE /users/{user_id} - Удалить пользователя по ID (требует аутентификации)
 @app.delete("/users/{user_id}", response_model=SUser)
 def delete_user(user_id: int, current_user: str = Depends(get_current_client)):
-    for index, user in enumerate(users_db):
-        if user.id == user_id:
-            deleted_user = users_db.pop(index)
-            return deleted_user
+    user = UserDAO.find_one_or_none(id=user_id)
+    if user:
+        UserDAO.delete_(id=user_id)
+        return user
     raise HTTPException(status_code=404, detail="User not found")
 
 # Запуск сервера

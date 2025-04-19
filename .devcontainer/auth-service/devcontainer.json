@@ -22,7 +22,9 @@
 			"extensions": [
 				"ms-python.vscode-pylance",
 				"ms-python.python",
-				"ms-python.flake8"
+				"ms-python.flake8",
+				"ms-azuretools.vscode-docker",
+				"cweijan.vscode-postgresql-client2"
 			]
 		}
 	}

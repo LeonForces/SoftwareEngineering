@@ -7,3 +7,5 @@
 db/folders/data/*
 db/users/data/*
 .github
+
+*/__pycache__

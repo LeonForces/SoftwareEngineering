@@ -1,82 +1,138 @@
-from typing import List, Dict, Optional
-from fastapi import FastAPI, Depends, HTTPException, status
+from fastapi import FastAPI, HTTPException, Request, Depends
 from fastapi.security import OAuth2PasswordBearer
-from jose import JWTError, jwt
-from pydantic import BaseModel
+from passlib.context import CryptContext
+from contextlib import asynccontextmanager
+from datetime import datetime
 
-# Конфигурация JWT (должна совпадать с сервисом авторизации)
-SECRET_KEY = "your-secret-key"
-ALGORITHM = "HS256"
+from faker import Faker
 
-app = FastAPI()
-
-# Имитация хранилища данных в памяти
-fake_db: List[Dict] = []
-current_id = 1
+from app.services import FolderDAO, get_user_id
+from app.db import engine
+from app.models import Base
+from app.schemas import SFolder, SFolderCreate
 
 
-# Модели Pydantic
-class FolderCreate(BaseModel):
-    name: str
-    description: Optional[str] = None
+@asynccontextmanager
+async def lifespan(app: FastAPI):
+    async with engine.begin() as conn:
+        await conn.run_sync(Base.metadata.drop_all)
+        await conn.run_sync(Base.metadata.create_all)
 
+    faker = Faker()
+    for _ in range(10000):
+        await FolderDAO.add_(
+            name=faker.word(),
+            created_at=faker.date_time(),
+            updated_at=faker.date_time(),
+            owner_id=faker.random_int(min=1, max=10000)
+        )
 
-class FolderResponse(FolderCreate):
-    id: int
-    user: str
+    yield
 
+app = FastAPI(lifespan=lifespan)
 
-# Настройка авторизации
+pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
 oauth2_scheme = OAuth2PasswordBearer(tokenUrl="token")
 
 
-async def get_current_user(token: str = Depends(oauth2_scheme)):
-    credentials_exception = HTTPException(
-        status_code=status.HTTP_401_UNAUTHORIZED,
-        detail="Could not validate credentials",
-        headers={"WWW-Authenticate": "Bearer"},
-    )
-    try:
-        payload = jwt.decode(token, SECRET_KEY, algorithms=[ALGORITHM])
-        username: str = payload.get("sub")
-        if username is None:
-            raise credentials_exception
-        else:
-            return username
-    except JWTError:
-        raise credentials_exception
+@app.get("/protected")
+async def get_protected_data(request: Request):
+    access_token = request.cookies.get("access_token")
+    if not access_token:
+        return {"error": "Токен отсутствует"}
+    return {"access_token": access_token}
 
 
-# API Endpoints
-@app.get("/folders", response_model=List[FolderResponse])
-async def get_user_folders(current_user: int = Depends(get_current_user)):
-    user_folders = [folder for folder in fake_db
-                    if folder["user"] == current_user]
-    return user_folders
-
-
-@app.post("/folders", response_model=FolderResponse,
-          status_code=status.HTTP_201_CREATED)
-async def create_folder(
-    folder_data: FolderCreate,
-    current_user: str = Depends(get_current_user)
+@app.get("/folders/", response_model=list[SFolder])
+async def get_folders(
+    user_id: int = Depends(get_user_id)
 ):
-    global current_id
-    if not folder_data.name:
+    folders = await FolderDAO.find_all()
+    return folders
+
+
+@app.get("/folders/{user_id}", response_model=list[SFolder])
+async def get_user_folders(
+    user_id: int = Depends(get_user_id)
+):
+    folders = await FolderDAO.find_all(owner_id=user_id)
+    if folders:
+        return folders
+    raise HTTPException(status_code=404, detail="Folders not found")
+
+
+@app.post("/folders/", response_model=SFolderCreate)
+async def create_folder(
+    new_folder: SFolderCreate,
+    user_id: int = Depends(get_user_id)
+):
+    check_folder = await FolderDAO.find_one_or_none(
+        name=new_folder.name,
+        owner_id=user_id
+    )
+    if check_folder:
         raise HTTPException(
-            status_code=status.HTTP_400_BAD_REQUEST,
-            detail="Folder name cannot be empty"
+            status_code=404,
+            detail="Folder name already exist"
         )
-    new_folder = {
-        "id": current_id,
-        "user": current_user,
-        "name": folder_data.name,
-        "description": folder_data.description
+    folder = {
+        "name": new_folder.name,
+        "created_at": datetime.now(),
+        "updated_at": datetime.now(),
+        "owner_id": user_id
     }
-    fake_db.append(new_folder)
-    current_id += 1
+    await FolderDAO.add_(**folder)
     return new_folder
+
+
+@app.put("/folders/{folder_id}", response_model=SFolderCreate)
+async def update_folder(
+    folder_id: int,
+    updated_folder: SFolderCreate,
+    user_id: int = Depends(get_user_id)
+):
+    check_folder = await FolderDAO.find_one_or_none(
+        id=folder_id,
+        owner_id=user_id
+    )
+    if check_folder:
+        folder = {
+            "name": updated_folder.name,
+            "created_at": datetime.now(),
+            "updated_at": datetime.now(),
+            "owner_id": check_folder.owner_id
+        }
+        await FolderDAO.update_(
+            model_id=folder_id, **folder
+        )
+        return updated_folder
+    raise HTTPException(status_code=404, detail="Folder not found")
+
+
+@app.delete("/folders/{folder_id}", response_model=SFolder)
+async def delete_folder(
+    folder_id: int,
+    user_id: int = Depends(get_user_id)
+):
+    folder = await FolderDAO.find_one_or_none(
+        id=folder_id,
+        owner_id=user_id
+    )
+    if folder:
+        await FolderDAO.delete_(id=folder_id)
+        return folder
+    raise HTTPException(status_code=404, detail="Folder not found")
+
+
+# Запуск сервера
+# http://localhost:8000/openapi.json swagger
+
 
 if __name__ == "__main__":
     import uvicorn
-    uvicorn.run(app, host="0.0.0.0", port=8001)
+    uvicorn.run(
+        "main:app",
+        host="0.0.0.0",
+        port=8000,
+        reload=True
+    )

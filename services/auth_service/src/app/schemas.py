@@ -1,4 +1,4 @@
-from pydantic import BaseModel
+from pydantic import BaseModel, ConfigDict
 from typing import Optional
 
 
@@ -8,5 +8,4 @@ class SUser(BaseModel):
     hashed_password: str
     age: Optional[int] = None
 
-    class Congig:
-        orm_mode = True
+    model_config = ConfigDict(from_attributes=True)

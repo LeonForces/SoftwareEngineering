@@ -1,11 +1,9 @@
 from sqlalchemy import select, insert, update, delete
 from fastapi import Request, HTTPException, status
-from jose import JWTError, jwt
-from datetime import datetime, timezone, timedelta
-from typing import Optional
+from jose import jwt, JWTError
 
 from app.db import AsyncSessionLocal
-from app.models import User
+from app.models import Folder
 from app.settings import settings
 
 
@@ -51,8 +49,8 @@ class BaseDAO:
             await session.commit()
 
 
-class UserDAO(BaseDAO):
-    model = User
+class FolderDAO(BaseDAO):
+    model = Folder
 
 
 # Зависимости для получения текущего пользователя
@@ -83,22 +81,3 @@ async def get_user_id(request: Request):
             return int(user_id)
     except JWTError:
         raise credentials_exception
-
-
-# Создание и проверка JWT токенов
-async def create_access_token(
-        data: dict,
-        expires_delta: Optional[timedelta] = None
-):
-    to_encode = data.copy()
-    if expires_delta:
-        expire = datetime.now(timezone.utc) + expires_delta
-    else:
-        expire = datetime.now(timezone.utc) + timedelta(minutes=15)
-    to_encode.update({"exp": expire})
-    encoded_jwt = jwt.encode(
-        to_encode,
-        settings.SECRET_KEY,
-        algorithm=settings.ALGORITHM
-    )
-    return encoded_jwt

@@ -5,8 +5,8 @@ from sqlalchemy.orm import sessionmaker
 from app.settings import settings
 
 DATABASE_URL = f"postgresql+asyncpg://{settings.POSTGRES_USER}:" + \
-    f"{settings.POSTGRES_PASSWORD}@{settings.POSTGRES_HOST_USERS}:" + \
-    f"{settings.POSTGRES_PORT}/{settings.POSTGRES_DB_USERS}"
+    f"{settings.POSTGRES_PASSWORD}@{settings.POSTGRES_HOST_FOLDERS}:" + \
+    f"{settings.POSTGRES_PORT}/{settings.POSTGRES_DB_FOLDERS}"
 # DATABASE_URL = f"postgresql://{settings.POSTGRES_USER}:" + \
 #     f"{settings.POSTGRES_PASSWORD}@{settings.POSTGRES_HOST}:" + \
 #     f"{settings.POSTGRES_PORT}/{settings.POSTGRES_DB}"

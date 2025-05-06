@@ -1,45 +1,19 @@
-from fastapi import FastAPI, HTTPException, Depends, status
+from fastapi import FastAPI, HTTPException, Depends, status, Response, \
+    Request
 from fastapi.security import OAuth2PasswordBearer, OAuth2PasswordRequestForm
-from typing import List, Optional
-from datetime import datetime, timedelta, timezone
-from jose import JWTError, jwt
+from typing import List
+from datetime import timedelta
 from passlib.context import CryptContext
 from contextlib import asynccontextmanager
+from fastapi.middleware.cors import CORSMiddleware
 
 from faker import Faker
 
-from app.services import UserDAO
+from app.services import UserDAO, create_access_token, get_user_id
 from app.db import engine
 from app.models import Base
 from app.settings import settings
 from app.schemas import SUser
-
-
-# async def load_data_from_json(filename: str):
-#     try:
-#         current_dir = os.path.dirname(os.path.abspath(__file__))
-#         file_path = os.path.join(current_dir, filename)
-
-#         if not os.path.exists(file_path):
-#             print(f"Файл {file_path} не найден!")
-#             return
-
-#         with open(file_path, 'r', encoding='utf-8') as file:
-#             users_data = json.load(file)
-#             print(f"Прочитано {len(users_data)} записей из файла")
-
-#         async with AsyncSessionLocal() as session:
-#             users = [User(**user_data) for user_data in users_data]
-#             session.add_all(users)
-#             await session.commit()
-#             print(f"Успешно загружено {len(users)} записей в БД")
-
-#     except json.JSONDecodeError as e:
-#         print(f"Ошибка формата JSON: {str(e)}")
-#     except Exception as e:
-#         print(f"Ошибка при загрузке данных: {str(e)}")
-#         if 'session' in locals():
-#             await session.rollback()
 
 
 @asynccontextmanager
@@ -62,53 +36,30 @@ async def lifespan(app: FastAPI):
 
 app = FastAPI(lifespan=lifespan)
 
-# Настройка паролей
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=["http://localhost:3000"],
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
+
 pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
-# Настройка OAuth2
 oauth2_scheme = OAuth2PasswordBearer(tokenUrl="token")
 
 
-# Зависимости для получения текущего пользователя
-async def get_current_client(token: str = Depends(oauth2_scheme)):
-    credentials_exception = HTTPException(
-        status_code=status.HTTP_401_UNAUTHORIZED,
-        detail="Could not validate credentials",
-        headers={"WWW-Authenticate": "Bearer"},
-    )
-    try:
-        payload = jwt.decode(
-            token,
-            settings.SECRET_KEY,
-            algorithms=[settings.ALGORITHM]
-        )
-        username: str = payload.get("sub")
-        if username is None:
-            raise credentials_exception
-        else:
-            return username
-    except JWTError:
-        raise credentials_exception
-
-
-# Создание и проверка JWT токенов
-def create_access_token(data: dict, expires_delta: Optional[timedelta] = None):
-    to_encode = data.copy()
-    if expires_delta:
-        expire = datetime.now(timezone.utc) + expires_delta
-    else:
-        expire = datetime.now(timezone.utc) + timedelta(minutes=15)
-    to_encode.update({"exp": expire})
-    encoded_jwt = jwt.encode(
-        to_encode,
-        settings.SECRET_KEY,
-        algorithm=settings.ALGORITHM
-    )
-    return encoded_jwt
+@app.get("/protected")
+def get_protected_data(request: Request):
+    access_token = request.cookies.get("access_token")
+    if not access_token:
+        return {"error": "Токен отсутствует"}
+    return {"access_token": access_token}
 
 
 # Маршрут для получения токена
 @app.post("/token")
 async def login_for_access_token(
+    response: Response,
     form_data: OAuth2PasswordRequestForm = Depends()
 ):
     user = await UserDAO.find_one_or_none(username=form_data.username)
@@ -121,8 +72,21 @@ async def login_for_access_token(
         access_token_expires = timedelta(
             minutes=settings.ACCESS_TOKEN_EXPIRE_MINUTES
         )
-        access_token = create_access_token(data={"sub": form_data.username},
-                                           expires_delta=access_token_expires)
+        access_token = await create_access_token(
+            data={
+                "sub": str(user.id),
+                "username": form_data.username
+            },
+            expires_delta=access_token_expires
+        )
+        response.set_cookie(
+            key="access_token",
+            value=access_token,
+            httponly=True,
+            max_age=3600,
+            secure=False,
+            samesite=None
+        )
         return {"access_token": access_token, "token_type": "bearer"}
     else:
         raise HTTPException(
@@ -132,17 +96,15 @@ async def login_for_access_token(
         )
 
 
-# GET /users - Получить всех пользователей (требует аутентификации)
-@app.get("/users", response_model=List[SUser])
-async def get_users(current_user: str = Depends(get_current_client)):
+@app.get("/users/", response_model=List[SUser])
+async def get_users(user_id: int = Depends(get_user_id)):
     users = await UserDAO.find_all()
     return users
 
 
-# GET /users/{user_id} - Получить пользователя по ID (требует аутентификации)
 @app.get("/users/{user_id}", response_model=SUser)
 async def get_user(
-    user_id: int, current_user: str = Depends(get_current_client)
+    user_id: int = Depends(get_user_id)
 ):
     user = await UserDAO.find_one_or_none(id=user_id)
     if user:
@@ -150,7 +112,6 @@ async def get_user(
     raise HTTPException(status_code=404, detail="User not found")
 
 
-# POST /users - Создать нового пользователя (требует аутентификации)
 @app.post("/users", response_model=SUser)
 async def create_user(
     new_user: SUser
@@ -169,10 +130,11 @@ async def create_user(
     return new_user
 
 
-# PUT /users/{user_id} - Обновить пользователя по ID (требует аутентификации)
 @app.put("/users/{user_id}", response_model=SUser)
-async def update_user(user_id: int, updated_user: SUser,
-                      current_user: str = Depends(get_current_client)):
+async def update_user(
+    updated_user: SUser,
+    user_id: int = Depends(get_user_id)
+):
     user = await UserDAO.find_one_or_none(id=user_id)
     if user:
         updated_user.hashed_password = pwd_context.encrypt(
@@ -183,10 +145,9 @@ async def update_user(user_id: int, updated_user: SUser,
     raise HTTPException(status_code=404, detail="User not found")
 
 
-# DELETE /users/{user_id} - Удалить пользователя по ID (требует аутентификации)
 @app.delete("/users/{user_id}", response_model=SUser)
 async def delete_user(
-    user_id: int, current_user: str = Depends(get_current_client)
+    user_id: int = Depends(get_user_id)
 ):
     user = await UserDAO.find_one_or_none(id=user_id)
     if user:
@@ -194,9 +155,14 @@ async def delete_user(
         return user
     raise HTTPException(status_code=404, detail="User not found")
 
+
+@app.post("/logout")
+def logout(response: Response):
+    response.delete_cookie("access_token")
+    return {"message": "Выход выполнен"}
+
 # Запуск сервера
 # http://localhost:8000/openapi.json swagger
-# http://localhost:8000/docs портал документации
 
 
 if __name__ == "__main__":

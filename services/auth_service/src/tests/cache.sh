@@ -1,0 +1,1 @@
+wrk -d 60 -t 10 -c 60 --latency -s ./cache.lua http://localhost:8000

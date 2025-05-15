@@ -12,6 +12,10 @@ class Settings(BaseSettings):
     POSTGRES_PASSWORD: str
     POSTGRES_DB_USERS: str
 
+    REDIS_URL: str
+    REDIS_HOST: str
+    REDIS_PORT: str
+
     class Config:
         env_file = ".env"
 

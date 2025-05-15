@@ -6,14 +6,19 @@ from datetime import timedelta
 from passlib.context import CryptContext
 from contextlib import asynccontextmanager
 from fastapi.middleware.cors import CORSMiddleware
+import logging
+from redis.exceptions import RedisError
+from prometheus_client import make_asgi_app, Counter, Histogram
 
 from faker import Faker
 
 from app.services import UserDAO, create_access_token, get_user_id
-from app.db import engine
+from app.db import engine, redis_client
 from app.models import Base
 from app.settings import settings
 from app.schemas import SUser
+
+logger = logging.getLogger(__name__)
 
 
 @asynccontextmanager
@@ -23,7 +28,6 @@ async def lifespan(app: FastAPI):
         await conn.run_sync(Base.metadata.create_all)
 
     faker = Faker()
-
     for _ in range(10000):
         await UserDAO.add_(
             username=faker.user_name(),
@@ -31,6 +35,12 @@ async def lifespan(app: FastAPI):
             hashed_password=faker.md5(),
             age=faker.random_int(min=18, max=65)
         )
+
+    try:
+        await redis_client.ping()
+    except RedisError as e:
+        logger.critical(f"Redis connection failed: {e}")
+        raise
 
     yield
 
@@ -46,6 +56,37 @@ app.add_middleware(
 
 pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
 oauth2_scheme = OAuth2PasswordBearer(tokenUrl="token")
+
+
+# Добавляем Prometheus ASGI middleware
+metrics_app = make_asgi_app()
+app.mount("/metrics", metrics_app)
+
+# Создаем кастомные метрики
+REQUEST_COUNT = Counter(
+    'http_requests_total',
+    'Total HTTP Requests',
+    ['method', 'endpoint', 'status']
+)
+
+REQUEST_LATENCY = Histogram(
+    'http_request_duration_seconds',
+    'HTTP request latency',
+    ['method', 'endpoint']
+)
+
+
+@app.middleware("http")
+async def monitor_requests(request, call_next):
+    method = request.method
+    endpoint = request.url.path
+
+    with REQUEST_LATENCY.labels(method, endpoint).time():
+        response = await call_next(request)
+        status = response.status_code
+
+    REQUEST_COUNT.labels(method, endpoint, status).inc()
+    return response
 
 
 @app.get("/protected")
@@ -106,10 +147,75 @@ async def get_users(user_id: int = Depends(get_user_id)):
 async def get_user(
     user_id: int = Depends(get_user_id)
 ):
+    cache_key = f"user:{user_id}"
+
+    try:
+        cached_user = await redis_client.get(cache_key)
+    except RedisError as e:
+        logger.error(f"Redis read error: {e}")
+        cached_user = None
+
+    if cached_user:
+        return SUser.model_validate_json(cached_user)
+
+    user = await UserDAO.find_one_or_none(id=user_id)
+    if not user:
+        raise HTTPException(status_code=404, detail="User not found")
+
+    user_model = SUser.model_validate(user, from_attributes=True)
+    try:
+        await redis_client.set(
+            cache_key,
+            user_model.model_dump_json(),
+            ex=180
+        )
+    except RedisError as e:
+        logger.error(f"Redis write error: {e}")
+
+    return user_model
+
+
+@app.get("/dev/users/{user_id}", response_model=SUser)
+async def test_get_user(
+    user_id: int
+):
     user = await UserDAO.find_one_or_none(id=user_id)
     if user:
         return user
     raise HTTPException(status_code=404, detail="User not found")
+
+
+@app.get("/dev/users/cache/{user_id}", response_model=SUser)
+async def test_get_user_cache(
+    user_id: int
+):
+    cache_key = f"user:{user_id}"
+
+    try:
+        cached_user = await redis_client.get(cache_key)
+    except RedisError as e:
+        logger.error(f"Redis read error: {e}")
+        cached_user = None
+
+    if cached_user:
+        return SUser.model_validate_json(cached_user)
+
+    user = await UserDAO.find_one_or_none(id=user_id)
+    if not user:
+        raise HTTPException(status_code=404, detail="User not found")
+
+    try:
+        user_model = SUser.model_validate(user, from_attributes=True)
+        await redis_client.set(
+            cache_key,
+            user_model.model_dump_json(),
+            ex=180,
+            nx=True
+        )
+    except RedisError as e:
+        logger.error(f"Redis write error: {e}")
+
+    return user
 
 
 @app.post("/users", response_model=SUser)

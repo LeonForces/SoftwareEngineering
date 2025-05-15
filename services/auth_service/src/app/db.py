@@ -1,6 +1,7 @@
 from sqlalchemy.ext.asyncio import create_async_engine, AsyncSession
 # from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker
+from redis.asyncio import Redis
 
 from app.settings import settings
 
@@ -13,6 +14,12 @@ DATABASE_URL = f"postgresql+asyncpg://{settings.POSTGRES_USER}:" + \
 
 engine = create_async_engine(DATABASE_URL, echo=True)
 # engine = create_engine(DATABASE_URL)
+# redis_client = redis.from_url(settings.REDIS_URL, decode_responses=True)
+redis_client = Redis(
+    host=settings.REDIS_HOST,
+    port=settings.REDIS_PORT,
+    decode_responses=True
+)
 
 AsyncSessionLocal = sessionmaker(
     engine,

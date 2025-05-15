@@ -86,3 +86,32 @@ services:
       MONGO_INITDB_ROOT_PASSWORD: ${MONGO_PASS}
     ports:
       - 27017:27017
+
+  cache:
+    image: redis:alpine
+    volumes:
+      - ./db/redis/data:/data
+    ports:
+    - 6379:6379
+
+  prometheus:
+    image: prom/prometheus:latest
+    ports:
+      - 9090:9090
+    volumes:
+      - ./prometheus.yml:/etc/prometheus/prometheus.yml
+    command:
+      - "--config.file=/etc/prometheus/prometheus.yml"
+    depends_on:
+      - auth-service
+      - folder-service
+      - email-service
+
+  grafana:
+    image: grafana/grafana:latest
+    ports:
+      - 3000:3000
+    volumes:
+      - ./grafana:/etc/grafana/provisioning
+    depends_on:
+      - prometheus

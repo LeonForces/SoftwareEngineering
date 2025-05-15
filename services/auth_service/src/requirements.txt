@@ -14,6 +14,7 @@ h11==0.14.0
 idna==3.10
 jose==1.0.0
 passlib==1.7.4
+prometheus_client==0.21.1
 psycopg2-binary==2.9.10
 pyasn1==0.4.8
 pycparser==2.22
@@ -22,6 +23,7 @@ pydantic-settings==2.9.1
 pydantic_core==2.33.0
 python-jose==3.4.0
 python-multipart==0.0.20
+redis==6.0.0
 rsa==4.9
 six==1.17.0
 sniffio==1.3.1

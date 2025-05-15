@@ -7,6 +7,7 @@
 db/folders/data/*
 db/users/data/*
 db/mongo/data/*
+db/redis/data/*
 .github
 
 */__pycache__

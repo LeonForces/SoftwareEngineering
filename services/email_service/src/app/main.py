@@ -101,8 +101,16 @@ def update_email(
     try:
         update_data = new_email.model_dump()
         update_data["updated_at"] = datetime.now()
+
+        try:
+            obj_id = ObjectId(email_id)
+        except InvalidId:
+            raise HTTPException(
+                status_code=400,
+                detail="Invalid email ID format"
+            )
         result = collection.update_one(
-            {"_id": ObjectId(email_id)},
+            {"_id": obj_id},
             {"$set": update_data}
         )
         if result.modified_count == 0:
@@ -123,8 +131,13 @@ def delete_email(
     email_id: str,
     username: str = Depends(get_username)
 ):
+    try:
+        obj_id = ObjectId(email_id)
+    except InvalidId:
+        raise HTTPException(status_code=400, detail="Invalid email ID format")
+
     email = collection.find_one(
-        {"_id": ObjectId(email_id)}
+        {"_id": obj_id}
     )
     if not email:
         raise HTTPException(
@@ -133,7 +146,7 @@ def delete_email(
         )
     if email["sender"] == username + domain:
         collection.delete_one(
-            {"_id": ObjectId(email_id)}
+            {"_id": obj_id}
         )
         return {"message": "Email deleted"}
     else:

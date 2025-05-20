@@ -1,6 +1,12 @@
-from fastapi import FastAPI, HTTPException, Depends, status, Response, \
+from fastapi import (
+    FastAPI,
+    HTTPException,
+    Depends,
+    status,
+    Response,
     Request
-from fastapi.security import OAuth2PasswordBearer, OAuth2PasswordRequestForm
+)
+from fastapi.security import OAuth2PasswordRequestForm
 from typing import List
 from datetime import timedelta
 from passlib.context import CryptContext
@@ -8,7 +14,15 @@ from contextlib import asynccontextmanager
 from fastapi.middleware.cors import CORSMiddleware
 import logging
 from redis.exceptions import RedisError
-from prometheus_client import make_asgi_app, Counter, Histogram
+from prometheus_client import (
+    CollectorRegistry,
+    Counter,
+    Histogram,
+    multiprocess,
+    generate_latest
+)
+from starlette.middleware.base import BaseHTTPMiddleware
+import time
 
 from faker import Faker
 
@@ -46,6 +60,44 @@ async def lifespan(app: FastAPI):
 
 app = FastAPI(lifespan=lifespan)
 
+registry = CollectorRegistry()
+multiprocess.MultiProcessCollector(registry)
+
+REQUEST_COUNTER = Counter(
+    "http_requests_total",
+    "Total HTTP Requests",
+    ["method", "endpoint"],
+    registry=registry
+)
+
+REQUEST_DURATION = Histogram(
+    "http_request_duration_seconds",
+    "HTTP Request Duration",
+    ["method", "endpoint"],
+    registry=registry
+)
+
+
+# Middleware для сбора метрик
+class MetricsMiddleware(BaseHTTPMiddleware):
+    async def dispatch(self, request, call_next):
+        method = request.method
+        endpoint = request.url.path
+
+        start_time = time.time()
+        response = await call_next(request)
+        duration = time.time() - start_time
+
+        REQUEST_COUNTER.labels(method=method, endpoint=endpoint).inc()
+        REQUEST_DURATION.labels(
+            method=method,
+            endpoint=endpoint
+        ).observe(duration)
+
+        return response
+
+
+app.add_middleware(MetricsMiddleware)
 app.add_middleware(
     CORSMiddleware,
     allow_origins=["http://localhost:3000"],
@@ -54,39 +106,15 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
+
+@app.get("/metrics")
+async def metrics():
+    return Response(
+        content=generate_latest(registry),
+        media_type="text/plain"
+    )
+
 pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
-oauth2_scheme = OAuth2PasswordBearer(tokenUrl="token")
-
-
-# Добавляем Prometheus ASGI middleware
-metrics_app = make_asgi_app()
-app.mount("/metrics", metrics_app)
-
-# Создаем кастомные метрики
-REQUEST_COUNT = Counter(
-    'http_requests_total',
-    'Total HTTP Requests',
-    ['method', 'endpoint', 'status']
-)
-
-REQUEST_LATENCY = Histogram(
-    'http_request_duration_seconds',
-    'HTTP request latency',
-    ['method', 'endpoint']
-)
-
-
-@app.middleware("http")
-async def monitor_requests(request, call_next):
-    method = request.method
-    endpoint = request.url.path
-
-    with REQUEST_LATENCY.labels(method, endpoint).time():
-        response = await call_next(request)
-        status = response.status_code
-
-    REQUEST_COUNT.labels(method, endpoint, status).inc()
-    return response
 
 
 @app.get("/protected")

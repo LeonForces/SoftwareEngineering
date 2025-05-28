@@ -27,12 +27,3 @@ AsyncSessionLocal = sessionmaker(
     expire_on_commit=False
 )
 # Session = sessionmaker(autocommit=False, autoflush=False, bind=engine)
-
-
-# Зависимости для получения сессии базы данных
-def get_db():
-    db = AsyncSessionLocal()
-    try:
-        yield db
-    finally:
-        db.close()

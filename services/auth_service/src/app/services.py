@@ -3,6 +3,8 @@ from fastapi import Request, HTTPException, status
 from jose import JWTError, jwt
 from datetime import datetime, timezone, timedelta
 from typing import Optional
+from aiokafka import AIOKafkaProducer
+import json
 
 from app.db import AsyncSessionLocal
 from app.models import User
@@ -102,3 +104,15 @@ async def create_access_token(
         algorithm=settings.ALGORITHM
     )
     return encoded_jwt
+
+
+async def get_kafka_producer():
+    producer = AIOKafkaProducer(
+        bootstrap_servers=settings.KAFKA_BOOTSTRAP_SERVERS,
+        value_serializer=lambda v: json.dumps(v).encode("utf-8")
+    )
+    await producer.start()
+    try:
+        yield producer
+    finally:
+        await producer.stop()

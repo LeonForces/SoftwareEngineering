@@ -23,10 +23,18 @@ from prometheus_client import (
 )
 from starlette.middleware.base import BaseHTTPMiddleware
 import time
+from aiokafka import AIOKafkaProducer
+from aiokafka.admin import AIOKafkaAdminClient, NewTopic
+from aiokafka.errors import TopicAlreadyExistsError
 
 from faker import Faker
 
-from app.services import UserDAO, create_access_token, get_user_id
+from app.services import (
+    UserDAO,
+    create_access_token,
+    get_user_id,
+    get_kafka_producer
+)
 from app.db import engine, redis_client
 from app.models import Base
 from app.settings import settings
@@ -37,6 +45,29 @@ logger = logging.getLogger(__name__)
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
+    admin = AIOKafkaAdminClient(
+        bootstrap_servers=settings.KAFKA_BOOTSTRAP_SERVERS
+    )
+    await admin.start()
+
+    topic = NewTopic(
+        name=settings.KAFKA_TOPIC,
+        num_partitions=1,
+        replication_factor=1,
+    )
+
+    try:
+        await admin.create_topics([topic])
+    except TopicAlreadyExistsError:
+        print("Топик уже существует")
+    finally:
+        await admin.close()
+
+    producer = AIOKafkaProducer(
+        bootstrap_servers=settings.KAFKA_BOOTSTRAP_SERVERS
+    )
+    await producer.start()
+
     async with engine.begin() as conn:
         await conn.run_sync(Base.metadata.drop_all)
         await conn.run_sync(Base.metadata.create_all)
@@ -57,6 +88,8 @@ async def lifespan(app: FastAPI):
         raise
 
     yield
+
+    await producer.stop()
 
 app = FastAPI(lifespan=lifespan)
 
@@ -246,22 +279,53 @@ async def test_get_user_cache(
     return user
 
 
-@app.post("/users", response_model=SUser)
+# @app.post("/users", response_model=SUser)
+# async def create_user(
+#     new_user: SUser
+# ):
+#     new_user.hashed_password = pwd_context.encrypt(new_user.hashed_password)
+#     username = await UserDAO.find_one_or_none(username=new_user.username)
+#     if username:
+#         raise HTTPException(status_code=404, detail="Username already exist")
+#     email = await UserDAO.find_one_or_none(email=new_user.email)
+#     if email:
+#         raise HTTPException(
+#             status_code=404,
+#             detail="Email is already registered"
+#         )
+#     await UserDAO.add_(**new_user.model_dump())
+#     return new_user
+
+
+@app.post("/users")
 async def create_user(
-    new_user: SUser
+    new_user: SUser,
+    producer: AIOKafkaProducer = Depends(get_kafka_producer)
 ):
     new_user.hashed_password = pwd_context.encrypt(new_user.hashed_password)
+
     username = await UserDAO.find_one_or_none(username=new_user.username)
     if username:
-        raise HTTPException(status_code=404, detail="Username already exist")
+        raise HTTPException(
+            status_code=409,
+            detail="Username already exists"
+        )
+
     email = await UserDAO.find_one_or_none(email=new_user.email)
     if email:
         raise HTTPException(
-            status_code=404,
+            status_code=409,
             detail="Email is already registered"
         )
-    await UserDAO.add_(**new_user.model_dump())
-    return new_user
+    try:
+        # Отправка сообщения
+        await producer.send_and_wait(
+            settings.KAFKA_TOPIC,
+            value=new_user.model_dump()
+        )
+        return {"status": "Message sent successfully"}
+    except Exception as e:
+        return {"error": str(e)}
 
 
 @app.put("/users/{user_id}", response_model=SUser)
@@ -294,6 +358,11 @@ async def delete_user(
 def logout(response: Response):
     response.delete_cookie("access_token")
     return {"message": "Выход выполнен"}
+
+
+@app.get("/health")
+def health_check():
+    return {"status": "ok"}
 
 # Запуск сервера
 # http://localhost:8000/openapi.json swagger

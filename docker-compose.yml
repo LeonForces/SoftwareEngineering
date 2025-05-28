@@ -1,41 +1,63 @@
 services:
   structurizr:
+    container_name: structurizr
     image: structurizr/lite 
     ports:
       - 9999:8080
     volumes:
       - .:/usr/local/structurizr:z
+    networks:
+      - structurizr-net
+
   auth-service:
+    container_name: auth-service
     build: ./services/auth_service/
     env_file:
       - .env
-    ports:
-      - 8000:8000
-      - 9100:9100
     depends_on:
       pg-users:
         condition: service_healthy
+      kafka:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8000/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 10s
+    ports:
+      - 8000:8000
+    networks:
+      - kafka-network
+      - auth-net
   
   folder-service:
+    container_name: folder-service
     build: ./services/folder_service/
     env_file:
       - .env
-    ports:
-      - 8001:8000
     depends_on:
       pg-folders:
         condition: service_healthy
+    ports:
+      - 8001:8000
+    networks:
+      - folders-net
 
   email-service:
+    container_name: email-service
     build: ./services/email_service/
     env_file:
       - .env
-    ports:
-      - 8002:8000
     depends_on:
       - mongo-emails
+    ports:
+      - 8002:8000
+    networks:
+      - emails-net
 
   pg-users:
+    container_name: pg-users
     image: postgres:14
     volumes:
       - ./db/users/data:/var/lib/postgresql/data
@@ -47,15 +69,18 @@ services:
       POSTGRES_DB: ${POSTGRES_DB_USERS}
       POSTGRES_USER: ${POSTGRES_USER}
       POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
-    ports:
-      - 5432:5432
     healthcheck:
       test: ["CMD-SHELL", "pg_isready -U admin -d db-users"]
       interval: 5s
       timeout: 5s
       retries: 5
+    ports:
+      - 5432:5432
+    networks:
+      - auth-net
 
   pg-folders:
+    container_name: pg-folders
     image: postgres:14
     volumes:
       - ./db/folders/data:/var/lib/postgresql/data
@@ -67,15 +92,18 @@ services:
       POSTGRES_DB: ${POSTGRES_DB_FOLDERS}
       POSTGRES_USER: ${POSTGRES_USER}
       POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
-    ports:
-      - 5433:5432
     healthcheck:
       test: ["CMD-SHELL", "pg_isready -U admin -d db-users"]
       interval: 5s
       timeout: 5s
       retries: 5
+    ports:
+      - 5433:5432
+    networks:
+      - folders-net
 
   mongo-emails:
+    container_name: mongo-emails
     image: mongo:5.0
     restart: always
     volumes:
@@ -87,13 +115,40 @@ services:
       MONGO_INITDB_ROOT_PASSWORD: ${MONGO_PASS}
     ports:
       - 27017:27017
+    networks:
+      - emails-net
 
   cache:
+    container_name: cache
     image: redis:alpine
     volumes:
       - ./db/redis/data:/data
     ports:
     - 6379:6379
+    networks:
+      - auth-net
+
+  kafka:
+    container_name: kafka
+    image: bitnami/kafka:3.7
+    environment:
+      - KAFKA_ENABLE_KRAFT=yes
+      - KAFKA_KRAFT_CLUSTER_ID=your-unique-cluster-id
+      - KAFKA_CFG_PROCESS_ROLES=controller,broker
+      - KAFKA_CFG_NODE_ID=0
+      - KAFKA_CFG_CONTROLLER_QUORUM_VOTERS=0@kafka:9093
+      - KAFKA_CFG_LISTENERS=PLAINTEXT://:9092,CONTROLLER://:9093
+      - KAFKA_CFG_ADVERTISED_LISTENERS=PLAINTEXT://kafka:9092
+      - KAFKA_CFG_CONTROLLER_LISTENER_NAMES=CONTROLLER
+    healthcheck:
+      test: ["CMD", "kafka-topics.sh", "--list", "--bootstrap-server", "localhost:9092"]
+      interval: 10s
+      timeout: 10s
+      retries: 10
+    ports:
+      - "9092:9092"
+    networks:
+      - kafka-network
 
   prometheus:
     image: prom/prometheus:latest
@@ -117,17 +172,50 @@ services:
     environment:
       - GF_SECURITY_ADMIN_USER=admin
       - GF_SECURITY_ADMIN_PASSWORD=admin
+    depends_on:
+      - prometheus
     ports:
       - 3000:3000
     networks:
       - monitoring
+
+  kafka-db-connector:
+    container_name: kafka-db-connector
+    build: ./services/kafka-db-connector/
+    env_file:
+      - .env
     depends_on:
-      - prometheus
+      auth-service:
+        condition:
+          service_healthy
+    ports:
+      - 8003:8000
+    networks:
+      - auth-net
+      - kafka-network
+  
+  # kafka-ui:
+  #   container_name: kafka-ui
+  #   image: provectuslabs/kafka-ui:latest
+  #   ports:
+  #     - 8082:8080
+  #   environment:
+  #     DYNAMIC_CONFIG_ENABLED: true
 
 volumes:
   prometheus_data:
   grafana_data:
 
 networks:
+  structurizr-net:
+    driver: bridge
   monitoring:
+    driver: bridge
+  kafka-network:
+    driver: bridge
+  auth-net:
+    driver: bridge
+  folders-net:
+    driver: bridge
+  emails-net:
     driver: bridge
